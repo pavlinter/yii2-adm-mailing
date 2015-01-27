@@ -3,6 +3,7 @@
 namespace pavlinter\admmailing\models;
 
 use Yii;
+use yii\helpers\ArrayHelper;
 
 /**
  * This is the model class for table "{{%mailing}}".
@@ -103,6 +104,18 @@ class Mailing extends \yii\db\ActiveRecord
             'created_at' => Yii::t('modelAdm/adm_mailing', 'Created At'),
             'updated_at' => Yii::t('modelAdm/adm_mailing', 'Updated At'),
         ];
+    }
+
+    public static function typeList($type = false)
+    {
+        $module = Yii::$app->getModule('admmailing');
+        if ($type !== false) {
+            if (isset($module->typeList[$type])) {
+                return $module->typeList[$type]['label'];
+            }
+            return null;
+        }
+        return ArrayHelper::getColumn($module->typeList, 'label');
     }
 
     /**

@@ -23,12 +23,35 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
 
     public $layout = '@vendor/pavlinter/yii2-adm/adm/views/layouts/main';
     /**
-     * @var array
+     * @var array|Closure
+     * example:
      * [
      *   'user' => function(){ return \pavlinter\adm\models\User::find(); },
      * ]
+     * OR
+     * [
+     *   'user' => [
+     *      'func' => function(){ return \pavlinter\adm\models\User::find(); }
+     *      'label' => 'myLabel'
+     *   ],
+     * ]
      */
     public $typeList;
+    /**
+     * @var array
+     * example:
+     * [
+     *   [
+     *      'email' => 'test@test.com',
+     *      'name' => 'myfromName',
+     *   ],
+     *   [
+     *      'email' => 'test2@test.com',
+     *      'name' => 'myfromName2',
+     *   ]
+     * ]
+     */
+    public $from = [];
     /**
      * @inheritdoc
      */
@@ -48,18 +71,7 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
     public function init()
     {
         parent::init();
-        if ($this->typeList instanceof Closure) {
-            $this->typeList = call_user_func($this->typeList, $this);
-        }
-
-        if (!is_array($this->typeList)) {
-            throw new InvalidConfigException('The "typeList" property must be array.');
-        }
-
-        if (empty($this->typeList)) {
-            throw new InvalidConfigException('The "typeList" property must be at least one element.');
-        }
-
+        $this->setTypeList();
     }
 
     /**
@@ -85,5 +97,75 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
             return false;
         }
         return true;
+    }
+
+    public function setFrom()
+    {
+        if ($this->from instanceof Closure) {
+            $this->from = call_user_func($this->from, $this);
+        }
+
+        if (!is_array($this->from)) {
+            throw new InvalidConfigException('The "from" property must be array.');
+        }
+
+        foreach ($this->from as $key => $options) {
+            if (!is_array($options)) {
+                $options = [
+                    'email' => $options,
+                ];
+            }
+
+            if (!isset($options['email'])) {
+                throw new InvalidConfigException('The "from" property must be correct structure.');
+            }
+
+            if (isset($options['name'])) {
+                $options['emailName'] = [$options['email'] => $options['name']];
+            } else {
+                $options['emailName'] = $options['email'];
+            }
+
+            $this->from[$key] = $options;
+        }
+
+        if (empty($this->from)) {
+            throw new InvalidConfigException('The "from" property must be at least one element.');
+        }
+    }
+
+    /**
+     * @throws InvalidConfigException
+     */
+    public function setTypeList()
+    {
+        if ($this->typeList instanceof Closure) {
+            $this->typeList = call_user_func($this->typeList, $this);
+        }
+
+        if (!is_array($this->typeList)) {
+            throw new InvalidConfigException('The "typeList" property must be array.');
+        }
+
+        if (empty($this->typeList)) {
+            throw new InvalidConfigException('The "typeList" property must be at least one element.');
+        }
+
+        foreach ($this->typeList as $key => $value) {
+            if ($value instanceof Closure) {
+                $options = [
+                    'func' => $value
+                ];
+            } else if (is_array($value)) {
+                $options = $value;
+            } else {
+                throw new InvalidConfigException('The "typeList" property must be correct structure.');
+            }
+
+            $this->typeList[$key] = ArrayHelper::merge([
+                'func' => $value,
+                'label' => $key,
+            ], $options);
+        }
     }
 }

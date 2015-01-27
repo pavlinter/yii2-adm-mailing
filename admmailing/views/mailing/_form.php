@@ -32,7 +32,7 @@ use yii\helpers\Url;
     <div class="row">
         <div class="col-xs-12 col-sm-6 col-md-6">
             <?= $form->field($model, 'type')->widget(\kartik\widgets\Select2::classname(), [
-                'data' => [],
+                'data' => \pavlinter\admmailing\models\Mailing::typeList(),
                 'options' => ['placeholder' => Adm::t('','Select ...', ['dot' => false])],
                 'pluginOptions' => [
                     'allowClear' => true,

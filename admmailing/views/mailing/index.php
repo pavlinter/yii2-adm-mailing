@@ -1,6 +1,7 @@
 <?php
 
 use kartik\grid\GridView;
+use pavlinter\admmailing\models\Mailing;
 use pavlinter\admmailing\Module;
 use yii\helpers\Html;
 use pavlinter\adm\Adm;
@@ -50,19 +51,16 @@ Yii::$app->i18n->resetDot();
                 'hAlign' => 'center',
                 'vAlign' => 'middle',
                 'filterType' => GridView::FILTER_SELECT2,
-                'filter'=> Module::getInstance()->pageLayouts,
+                'filter'=> Mailing::typeList(),
                 'value' => function ($model) {
-                    if (isset(Module::getInstance()->pageLayouts[$model->layout])) {
-                        return Module::getInstance()->pageLayouts[$model->layout];
-                    }
+                    return Mailing::typeList($model->type);
                 },
                 'filterWidgetOptions' => [
-                    'pluginOptions' => ['allowClear' => true ],
+                    'pluginOptions' => ['allowClear' => true],
                 ],
                 'filterInputOptions' => ['placeholder' => Adm::t('','Select ...', ['dot' => false])],
                 'format' => 'raw'
             ],
-            'type',
 
             ['class' => '\kartik\grid\ActionColumn'],
         ],
