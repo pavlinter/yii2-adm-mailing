@@ -33,9 +33,3 @@ Yii2: Adm-Mailing Модуль для Adm CMS
 ```php
 yii migrate --migrationPath=@vendor/pavlinter/yii2-adm-mailing/admmailing/migrations
 ```
-
-Как использовать
--------------
-```php
-
-```
