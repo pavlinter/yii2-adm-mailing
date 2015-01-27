@@ -7,9 +7,11 @@
 
 namespace pavlinter\admmailing;
 
+use Closure;
 use pavlinter\adm\Adm;
 use pavlinter\adm\AdmBootstrapInterface;
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 
 /**
@@ -20,7 +22,13 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
     public $controllerNamespace = 'pavlinter\admmailing\controllers';
 
     public $layout = '@vendor/pavlinter/yii2-adm/adm/views/layouts/main';
-
+    /**
+     * @var array
+     * [
+     *   'user' => function(){ return \pavlinter\adm\models\User::find(); },
+     * ]
+     */
+    public $typeList;
     /**
      * @inheritdoc
      */
@@ -40,6 +48,18 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
     public function init()
     {
         parent::init();
+        if ($this->typeList instanceof Closure) {
+            $this->typeList = call_user_func($this->typeList, $this);
+        }
+
+        if (!is_array($this->typeList)) {
+            throw new InvalidConfigException('The "typeList" property must be array.');
+        }
+
+        if (empty($this->typeList)) {
+            throw new InvalidConfigException('The "typeList" property must be at least one element.');
+        }
+
     }
 
     /**

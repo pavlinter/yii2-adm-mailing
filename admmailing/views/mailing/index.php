@@ -1,5 +1,7 @@
 <?php
 
+use kartik\grid\GridView;
+use pavlinter\admmailing\Module;
 use yii\helpers\Html;
 use pavlinter\adm\Adm;
 
@@ -26,14 +28,41 @@ Yii::$app->i18n->resetDot();
         'filterModel' => $searchModel,
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
-
-            'id',
-            'title',
-            'email:email',
-            'name',
+            [
+                'attribute' => 'title',
+                'vAlign' => 'middle',
+                'hAlign' => 'center',
+            ],
+            [
+                'attribute' => 'email',
+                'vAlign' => 'middle',
+                'hAlign' => 'center',
+                'format' => 'email',
+            ],
+            [
+                'attribute' => 'name',
+                'vAlign' => 'middle',
+                'hAlign' => 'center',
+            ],
+            [
+                'attribute' => 'type',
+                'vAlign' => 'middle',
+                'hAlign' => 'center',
+                'vAlign' => 'middle',
+                'filterType' => GridView::FILTER_SELECT2,
+                'filter'=> Module::getInstance()->pageLayouts,
+                'value' => function ($model) {
+                    if (isset(Module::getInstance()->pageLayouts[$model->layout])) {
+                        return Module::getInstance()->pageLayouts[$model->layout];
+                    }
+                },
+                'filterWidgetOptions' => [
+                    'pluginOptions' => ['allowClear' => true ],
+                ],
+                'filterInputOptions' => ['placeholder' => Adm::t('','Select ...', ['dot' => false])],
+                'format' => 'raw'
+            ],
             'type',
-            // 'created_at',
-            // 'updated_at',
 
             ['class' => '\kartik\grid\ActionColumn'],
         ],

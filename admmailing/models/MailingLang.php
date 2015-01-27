@@ -42,7 +42,6 @@ class MailingLang extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['mailing_id', 'language_id'], 'required'],
             [['mailing_id', 'language_id'], 'integer'],
             [['text'], 'string'],
             [['subject'], 'string', 'max' => 100]

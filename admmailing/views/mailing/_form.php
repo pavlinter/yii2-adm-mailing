@@ -16,23 +16,33 @@ use yii\helpers\Url;
 
     <?= $form->errorSummary([$model] + $model->getLangModels(), ['class' => 'alert alert-danger']); ?>
 
-    <?= $form->field($model, 'title')->textInput(['maxlength' => 250]) ?>
 
-    <?= $form->field($model, 'email')->textInput(['maxlength' => 250]) ?>
+    <div class="row">
+        <div class="col-xs-12 col-sm-6 col-md-6">
+            <?= $form->field($model, 'title')->textInput(['maxlength' => 250]) ?>
 
-    <?= $form->field($model, 'name')->textInput(['maxlength' => 250]) ?>
 
-    <?= $form->field($model, 'type')->widget(\kartik\widgets\Select2::classname(), [
-		'data' => [],
-		'options' => ['placeholder' => Adm::t('','Select ...', ['dot' => false])],
-		'pluginOptions' => [
-			'allowClear' => true,
-		]
-	]); ?>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-6">
+            <?= $form->field($model, 'email')->textInput(['maxlength' => 250]) ?>
 
-    <?= $form->field($model, 'created_at')->textInput() ?>
 
-    <?= $form->field($model, 'updated_at')->textInput() ?>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 col-sm-6 col-md-6">
+            <?= $form->field($model, 'type')->widget(\kartik\widgets\Select2::classname(), [
+                'data' => [],
+                'options' => ['placeholder' => Adm::t('','Select ...', ['dot' => false])],
+                'pluginOptions' => [
+                    'allowClear' => true,
+                ]
+            ]); ?>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-6">
+            <?= $form->field($model, 'name')->textInput(['maxlength' => 250]) ?>
+        </div>
+    </div>
 
     <section class="panel adm-langs-panel">
         <header class="panel-heading bg-light">

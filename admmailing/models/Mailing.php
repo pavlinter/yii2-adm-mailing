@@ -74,7 +74,7 @@ class Mailing extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['type'], 'required'],
+            [['title', 'type'], 'required'],
             [['title', 'email', 'name'], 'string', 'max' => 250],
             [['type'], 'string', 'max' => 50]
         ];
