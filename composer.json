@@ -1,0 +1,25 @@
+{
+    "name": "pavlinter/yii2-adm-mailing",
+    "description": "Yii2: Adm-Mailing Модуль для Adm CMS",
+    "keywords": ["yii2", "adm", "email","adm-mailing", "mailing"],
+    "type": "yii2-extension",
+    "license": "BSD 3-Clause",
+    "support": {
+        "issues": "https://github.com/pavlinter/yii2-adm-mailing/issues",
+        "source": "https://github.com/pavlinter/yii2-adm-mailing"
+    },
+    "authors": [
+        {
+            "name": "Pavels Radajevs",
+            "email": "pavlinter@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "pavlinter\\": ""
+        }
+    }
+}
