@@ -7,7 +7,7 @@ use yii\helpers\Html;
 use pavlinter\adm\Adm;
 
 /* @var $this yii\web\View */
-/* @var $searchModel app\models\MailingSearch */
+/* @var $searchModel \pavlinter\admmailing\models\MailingSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
 Yii::$app->i18n->disableDot();
@@ -62,7 +62,19 @@ Yii::$app->i18n->resetDot();
                 'format' => 'raw'
             ],
 
-            ['class' => '\kartik\grid\ActionColumn'],
+            [
+                'class' => '\kartik\grid\ActionColumn',
+                'width' => '130px',
+                'template' => '{send} {update} {delete}',
+                'buttons' => [
+                    'send' => function ($url, $model, $key) {
+                        return Html::a('<span class="fa fa-envelope"></span>', $url, [
+                            'title' => Adm::t('mailing', 'Send', ['dot' => false]),
+                            'data-pjax' => '0',
+                        ]);
+                    },
+                ],
+            ],
         ],
     ]); ?>
 

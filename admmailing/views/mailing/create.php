@@ -4,7 +4,7 @@ use yii\helpers\Html;
 use pavlinter\adm\Adm;
 
 /* @var $this yii\web\View */
-/* @var $model app\models\Mailing */
+/* @var $model \pavlinter\admmailing\models\Mailing */
 
 Yii::$app->i18n->disableDot();
 $this->title = Adm::t('mailing', 'Create Mailing');

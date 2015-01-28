@@ -1,0 +1,18 @@
+.mailing-res-process{
+    height: 250px;
+    overflow-y: auto;
+    border: 1px solid #cccccc;
+    padding: 5px 10px;
+    margin-bottom: 10px;
+}
+.mailing-one-process{
+    padding: 3px 0px;
+}
+.mailing-error-process{
+    padding: 3px 0px;
+}
+.mailing-success-process{
+    margin: 5px 0px;
+    padding: 5px 0px;
+    border-top: 1px solid #cccccc;
+}

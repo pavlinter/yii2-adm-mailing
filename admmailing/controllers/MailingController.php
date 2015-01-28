@@ -9,11 +9,13 @@ namespace pavlinter\admmailing\controllers;
 
 use pavlinter\admmailing\models\Mailing;
 use pavlinter\admmailing\Module;
+use Swift_SwiftException;
 use Yii;
 use pavlinter\adm\Adm;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use yii\web\Response;
 
 /**
  * MailingController implements the CRUD actions for Mailing model.
@@ -47,18 +49,6 @@ class MailingController extends Controller
         return $this->render('index', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
-        ]);
-    }
-
-    /**
-     * Displays a single Mailing model.
-     * @param integer $id
-     * @return mixed
-     */
-    public function actionView($id)
-    {
-        return $this->render('view', [
-            'model' => $this->findModel($id),
         ]);
     }
 
@@ -131,5 +121,148 @@ class MailingController extends Controller
         } else {
             throw new NotFoundHttpException('The requested page does not exist.');
         }
+    }
+
+    /**
+     * @param $id
+     * @return string
+     * @throws NotFoundHttpException
+     */
+    public function actionSend($id)
+    {
+        /* @var $module \pavlinter\admmailing\Module */
+        /* @var $model \pavlinter\admmailing\models\Mailing */
+        $module = Module::getInstance();
+        $model  = $this->findModel($id);
+
+        if ($model->email) {
+            if ($model->name) {
+
+            }
+        }
+
+        if (Yii::$app->request->isAjax) {
+            set_time_limit(0);
+            Yii::$app->response->format = Response::FORMAT_JSON;
+
+            if (!isset($module->typeList[$model->type])) {
+                $json['r'] = 'error';
+                $json['error_text'] = Yii::t('mailing', 'The type "'  . $model->type . '" is not exist!', ['dot' => false]);
+                return $json;
+            }
+            /* @var $type \pavlinter\admmailing\objects\Type */
+            $type = $module->typeList[$model->type];
+            $countIteration = 10;
+
+            $last =  (int)Yii::$app->request->post('last', 0);
+            $continue =  (int)Yii::$app->request->post('continue', 0);
+            $changeTransport =  (int)Yii::$app->request->post('changeTransport', 0);
+
+            $username = 'Default username';
+            if ($changeTransport) {
+                if (isset($module->transport[$changeTransport - 1])) {
+                    $transport = $module->transport[$changeTransport - 1];
+                    Yii::$app->mailer->setTransport($transport);
+                    $username = $transport->getUsername();
+                } else {
+                    $changeTransport = 0;
+                }
+            }
+            $json['username'] = $username;
+
+            /* @var $query \yii\db\Query */
+            $query = call_user_func($type->getQuery());
+
+            $countRows = clone $query;
+            $queryRows = clone $query;
+
+            $countEmails = $countRows->count();
+            $queryRows->asArray()->limit($countIteration)->offset($last);
+
+            $i = 0;
+
+            $json['r'] = null;
+            foreach ($queryRows->batch(50) as $rows) {
+                $braek = false;
+                foreach ($rows as $row) {
+                    /*if ($i + $last >= 19) {
+                        break; //force stop;
+                    }*/
+
+                    $i++;
+                    /* @var \yii\swiftmailer\Message $mailer */
+                    try {
+                        /*
+                        if ($i + $last == 45 && !$continue) {
+                            throw new Swift_SwiftException('Gmail! Continue please!');
+                        }
+                        if ($i + $last == 80 && !$continue) {
+                            throw new Swift_SwiftException('Gmail! Continue please!');
+                        }
+                        if ($i + $last == 125 && !$continue) {
+                            throw new Swift_SwiftException('Gmail! Continue please!');
+                        }
+                        if ($i + $last == 160 && !$continue) {
+                            throw new Swift_SwiftException('Gmail! Continue please!');
+                        }
+                        if ($i + $last == 200 && !$continue) {
+                            throw new Swift_SwiftException('Gmail! Continue please!');
+                        }*/
+
+
+                        $mailer = Yii::$app->mailer->compose();
+                        $mailer->setTo($row[$type->emailKey]);
+
+                        if ($type->reaplyTo) {
+                            $mailer->setReplyTo($type->reaplyTo);
+                        }
+
+                        $replace = $type->getVarTemplate($row);
+                        $subject = strtr($model->subject, $replace);
+                        $text = strtr(nl2br($model->text), $replace);
+
+                        echo $subject . '|';
+                        echo $text;
+                        exit('|');
+                        $mailer->setFrom($module->from)
+                            ->setSubject($subject)
+                            ->setHtmlBody($text);
+                        //$emailer->send();
+                        sleep(2);
+
+                    } catch(Swift_SwiftException $e) {
+                        $changeTransport++;
+                        $i--;
+                        $json['r'] = 'error';
+                        $json['error_text'] = Yii::t('mailing', 'Error: {errorText}', ['dot' => false, 'errorText' => $e->getMessage()]);
+                        $braek = true;
+                        break;
+                    }
+
+                }
+                if ($braek) {
+                    break;
+                }
+            }
+            $json['last'] = $i + $last;
+            $json['changeTransport'] = $changeTransport;
+            if ($json['r']) {
+
+            }else if($i == $countIteration){
+                $json['r']    = 'process';
+            } else {
+                $json['r']    = 'end';
+                $json['text_success'] = Adm::t('mailing', 'Success: {sum} / {end}', ['dot' => false, 'sum' => $json['last'], 'end' => $countEmails]);
+            }
+            $json['countEmails'] = $countEmails;
+            $json['count'] = $i;
+            $json['procent'] = (int)($json['last'] * 100 / $countEmails);
+            $json['text'] = Adm::t('mailing', 'Sended: {count} emails ({start}/{end})', ['count' => $i,'start' => $json['last'], 'end' => $countEmails, 'dot' => false]);
+            return $json;
+        }
+
+        return $this->render('send', [
+            'model' => $model,
+        ]);
     }
 }

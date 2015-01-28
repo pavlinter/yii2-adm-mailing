@@ -6,7 +6,7 @@ use pavlinter\adm\Adm;
 use yii\helpers\Url;
 
 /* @var $this yii\web\View */
-/* @var $model app\models\Mailing */
+/* @var $model \pavlinter\admmailing\models\Mailing */
 /* @var $form yii\widgets\ActiveForm */
 ?>
 
@@ -95,6 +95,15 @@ use yii\helpers\Url;
             'input' => 'adm-redirect',
             'name' => 'redirect',
             'value' => Url::to(['index']),
+            'formSelector' => $form,
+        ]);?>
+
+        <?=  InputButton::widget([
+            'label' => $model->isNewRecord ? Adm::t('mailing', 'Create and Send', ['dot' => false]) : Adm::t('mailing', 'Update and Send', ['dot' => false]),
+            'options' => ['class' => 'btn btn-primary'],
+            'input' => 'adm-redirect',
+            'name' => 'redirect',
+            'value' => Url::to(['send', 'id' => '{id}']),
             'formSelector' => $form,
         ]);?>
     </div>

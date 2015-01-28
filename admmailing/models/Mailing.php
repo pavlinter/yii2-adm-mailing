@@ -29,6 +29,8 @@ use yii\helpers\ArrayHelper;
  * @property string $type
  * @property string $created_at
  * @property string $updated_at
+ * @property string $subject
+ * @property string $text
  *
  * @property MailingLang[] $translations
  */
@@ -76,6 +78,7 @@ class Mailing extends \yii\db\ActiveRecord
     {
         return [
             [['title', 'type'], 'required'],
+            [['email'], 'email'],
             [['title', 'email', 'name'], 'string', 'max' => 250],
             [['type'], 'string', 'max' => 50]
         ];
@@ -111,7 +114,7 @@ class Mailing extends \yii\db\ActiveRecord
         $module = Yii::$app->getModule('admmailing');
         if ($type !== false) {
             if (isset($module->typeList[$type])) {
-                return $module->typeList[$type]['label'];
+                return $module->typeList[$type]->label;
             }
             return null;
         }

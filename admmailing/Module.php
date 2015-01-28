@@ -19,39 +19,59 @@ use yii\helpers\ArrayHelper;
  */
 class Module extends \yii\base\Module implements AdmBootstrapInterface
 {
+    /**
+     * @var string
+     */
     public $controllerNamespace = 'pavlinter\admmailing\controllers';
-
+    /**
+     * @var string
+     */
     public $layout = '@vendor/pavlinter/yii2-adm/adm/views/layouts/main';
     /**
-     * @var array|Closure
+     * @var string
+     */
+    public $typeClass = 'pavlinter\admmailing\objects\Type';
+    /**
+     * @var array|\Closure
      * example:
      * [
-     *   'user' => function(){ return \pavlinter\adm\models\User::find(); },
+     *   'users' => function(){ return \pavlinter\adm\models\User::find(); },
      * ]
      * OR
      * [
-     *   'user' => [
-     *      'func' => function(){ return \pavlinter\adm\models\User::find(); }
+     *   'users' => [
+     *      'query' => function(){ return \pavlinter\adm\models\User::find(); }
      *      'label' => 'myLabel'
      *   ],
      * ]
      */
-    public $typeList;
+    public $typeList = [];
+    /**
+     * @var string|array
+     * example: ['test@test.com' => 'fromName']
+     * default: Yii::$app->params['adminEmailName']
+     */
+    public $from;
     /**
      * @var array
      * example:
      * [
      *   [
-     *      'email' => 'test@test.com',
-     *      'name' => 'myfromName',
+     *      'username' => 'test@test.com',
+     *      'password' => 'xxxxxxxxx',
      *   ],
      *   [
-     *      'email' => 'test2@test.com',
-     *      'name' => 'myfromName2',
+     *      'class' => 'Swift_SmtpTransport',
+     *      'host' => 'localhost',
+     *      'username' => 'username',
+     *      'password' => 'password',
+     *      'port' => '587',
+     *      'encryption' => 'tls',
      *   ]
      * ]
      */
-    public $from = [];
+    public $transport;
+
     /**
      * @inheritdoc
      */
@@ -71,7 +91,12 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
     public function init()
     {
         parent::init();
-        $this->setTypeList();
+        $this->initDefaultTypeList();
+        $this->initDefaultTransport();
+
+        if (empty($this->from)) {
+            $this->from = Yii::$app->params['adminEmailName'];
+        }
     }
 
     /**
@@ -96,48 +121,57 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
         if (!parent::beforeAction($action) || !$adm->user->can('Adm-Mailing')) {
             return false;
         }
+        MailingAsset::register(Yii::$app->getView());
         return true;
     }
 
-    public function setFrom()
+    /**
+     * @return bool
+     * @throws InvalidConfigException
+     */
+    public function initDefaultTransport()
     {
-        if ($this->from instanceof Closure) {
-            $this->from = call_user_func($this->from, $this);
+        if ($this->transport instanceof Closure) {
+            $this->transport = call_user_func($this->transport, $this);
         }
 
-        if (!is_array($this->from)) {
-            throw new InvalidConfigException('The "from" property must be array.');
+        if ($this->transport === null) {
+            return false;
         }
 
-        foreach ($this->from as $key => $options) {
-            if (!is_array($options)) {
-                $options = [
-                    'email' => $options,
-                ];
-            }
-
-            if (!isset($options['email'])) {
-                throw new InvalidConfigException('The "from" property must be correct structure.');
-            }
-
-            if (isset($options['name'])) {
-                $options['emailName'] = [$options['email'] => $options['name']];
-            } else {
-                $options['emailName'] = $options['email'];
-            }
-
-            $this->from[$key] = $options;
+        if (!is_array($this->transport)) {
+            throw new InvalidConfigException('The "transport" property must be array.');
         }
 
-        if (empty($this->from)) {
-            throw new InvalidConfigException('The "from" property must be at least one element.');
+        /* @var \yii\swiftmailer\Mailer $mail */
+        /* @var \Swift_SmtpTransport|\Swift_MailTransport $transport */
+        $mailer = Yii::$app->mailer;
+        $transport = $mailer->getTransport();
+        if (!($transport instanceof \Swift_SmtpTransport)) {
+            throw new InvalidConfigException('You mast set mailer component.');
         }
+
+        $default = [
+            'class' => 'Swift_SmtpTransport',
+            'host' => $transport->getHost(),
+            'username' => $transport->getUsername(),
+            'password' => $transport->getPassword(),
+            'port' => $transport->getPort(),
+            'encryption' => $transport->getEncryption(),
+        ];
+
+        $newTransport = [$transport];
+        foreach ($this->transport as $options) {
+            $options = ArrayHelper::merge($default, $options);
+            $newTransport[] = Yii::createObject($options);
+        }
+        $this->transport = $newTransport;
     }
 
     /**
      * @throws InvalidConfigException
      */
-    public function setTypeList()
+    public function initDefaultTypeList()
     {
         if ($this->typeList instanceof Closure) {
             $this->typeList = call_user_func($this->typeList, $this);
@@ -147,14 +181,24 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
             throw new InvalidConfigException('The "typeList" property must be array.');
         }
 
-        if (empty($this->typeList)) {
-            throw new InvalidConfigException('The "typeList" property must be at least one element.');
+        if (!isset($this->typeList['users'])) {
+            $this->typeList['users'] = [
+              'query' => function(){
+                  return \pavlinter\adm\models\User::find();
+              },
+              'label' => Adm::t('mailing', 'Users'),
+            ];
+        } else {
+            if ($this->typeList['users'] === false) {
+                unset($this->typeList['users']);
+            }
         }
 
         foreach ($this->typeList as $key => $value) {
             if ($value instanceof Closure) {
                 $options = [
-                    'func' => $value
+                    'query' => $value,
+                    'label' => $key,
                 ];
             } else if (is_array($value)) {
                 $options = $value;
@@ -162,10 +206,10 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
                 throw new InvalidConfigException('The "typeList" property must be correct structure.');
             }
 
-            $this->typeList[$key] = ArrayHelper::merge([
-                'func' => $value,
-                'label' => $key,
-            ], $options);
+            if (!isset($options['class'])) {
+                $options['class'] = $this->typeClass;
+            }
+            $this->typeList[$key] = Yii::createObject($options);
         }
     }
 }
