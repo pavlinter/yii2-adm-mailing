@@ -1,3 +1,10 @@
+.mailing-trans {
+    margin-bottom: 10px;
+    display: none;
+}
+.mailing-trasnalate-link{
+    font-size: 14px;
+}
 .mailing-res-process{
     height: 250px;
     overflow-y: auto;

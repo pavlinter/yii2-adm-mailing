@@ -11,17 +11,18 @@ use pavlinter\adm\Adm;
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
 Yii::$app->i18n->disableDot();
-$this->title = Adm::t('mailing', 'Mailings');
+$this->title = Yii::t('adm-mailing', 'Mailings');
 $this->params['breadcrumbs'][] = $this->title;
 Yii::$app->i18n->resetDot();
 ?>
 <div class="mailing-index">
-
-    <h1><?= Html::encode($this->title) ?></h1>
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
+    <?= Module::trasnalateLink() ?>
+    <h1>
+        <?= Html::encode($this->title) ?>
+    </h1>
 
     <p>
-        <?= Html::a(Adm::t('mailing', 'Create Mailing'), ['create'], ['class' => 'btn btn-primary']) ?>
+        <?= Html::a(Yii::t('adm-mailing', 'Create Mailing'), ['create'], ['class' => 'btn btn-primary']) ?>
     </p>
 
     <?= Adm::widget('GridView',[
@@ -65,11 +66,17 @@ Yii::$app->i18n->resetDot();
             [
                 'class' => '\kartik\grid\ActionColumn',
                 'width' => '130px',
-                'template' => '{send} {update} {delete}',
+                'template' => '{send} {copy} {update} {delete}',
                 'buttons' => [
                     'send' => function ($url, $model, $key) {
                         return Html::a('<span class="fa fa-envelope"></span>', $url, [
-                            'title' => Adm::t('mailing', 'Send', ['dot' => false]),
+                            'title' => Yii::t('adm-mailing', 'Send', ['dot' => false]),
+                            'data-pjax' => '0',
+                        ]);
+                    },
+                    'copy' => function ($url, $model) {
+                        return Html::a('<span class="fa fa-copy"></span>', ['create', 'id' => $model->id], [
+                            'title' => Yii::t('adm-mailing/title', 'Copy', ['dot' => false]),
                             'data-pjax' => '0',
                         ]);
                     },

@@ -2,6 +2,7 @@
 
 namespace pavlinter\admmailing\models;
 
+use pavlinter\adm\models\Language;
 use Yii;
 
 /**
@@ -63,11 +64,11 @@ class MailingLang extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'id' => Yii::t('modelAdm/adm_mailing_lang', 'ID'),
-            'mailing_id' => Yii::t('modelAdm/adm_mailing_lang', 'Mailing ID'),
-            'language_id' => Yii::t('modelAdm/adm_mailing_lang', 'Language ID'),
-            'subject' => Yii::t('modelAdm/adm_mailing_lang', 'Subject'),
-            'text' => Yii::t('modelAdm/adm_mailing_lang', 'Text'),
+            'id' => Yii::t('modelAdm/adm-mailing-lang', 'ID'),
+            'mailing_id' => Yii::t('modelAdm/adm-mailing-lang', 'Mailing ID'),
+            'language_id' => Yii::t('modelAdm/adm-mailing-lang', 'Language ID'),
+            'subject' => Yii::t('modelAdm/adm-mailing-lang', 'Subject'),
+            'text' => Yii::t('modelAdm/adm-mailing-lang', 'Text'),
         ];
     }
 

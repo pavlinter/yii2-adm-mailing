@@ -15,8 +15,10 @@ class m150127_115058_mailing extends Migration
         $this->createTable('{{%mailing}}', [
             'id' => Schema::TYPE_PK,
             'title' => Schema::TYPE_STRING . "(250) NULL",
-            'email' => Schema::TYPE_STRING . "(250) NULL",
+            'email' => Schema::TYPE_STRING . "(320) NULL",
             'name' => Schema::TYPE_STRING . "(250) NULL",
+            'reply_email' => Schema::TYPE_STRING . "(320) NULL",
+            'reply_name' => Schema::TYPE_STRING . "(250) NULL",
             'type' => Schema::TYPE_STRING . "(50) NOT NULL",
             'created_at' => Schema::TYPE_TIMESTAMP . " NOT NULL",
             'updated_at' => Schema::TYPE_TIMESTAMP . " NOT NULL",

@@ -16,9 +16,21 @@ use yii\base\InvalidConfigException;
 class Type extends \yii\base\Object
 {
     /**
-     * @var string
+     * @var boolean
      */
-    public $reaplyTo;
+    public $showAllstatistic = false;
+    /**
+     * @var boolean
+     */
+    public $testMode = false;
+    /**
+     * @var integer
+     */
+    public $sendSleep = 2;
+    /**
+     * @var integer
+     */
+    public $countIteration = 10;
     /**
      * @var string
      */
@@ -35,6 +47,10 @@ class Type extends \yii\base\Object
      * @var \Closure
      */
     private $_var;
+    /**
+     * @var \Closure
+     */
+    private $_emailFilter;
 
     /**
      * @param $row
@@ -102,5 +118,33 @@ class Type extends \yii\base\Object
         $this->_var = $value;
     }
 
+    /**
+     * @inheritdoc
+     * @return \Closure
+     */
+    public function getEmailFilter()
+    {
+        if ($this->_emailFilter === null) {
+            $this->setEmailFilter(function ($email, $row) {
+                $model = \yii\base\DynamicModel::validateData(['email' => $email], [
+                    ['email', 'email'],
+                ]);
+                return !$model->hasErrors();
+            });
+        }
+        return $this->_emailFilter;
+    }
+    /**
+     * @inheritdoc
+     * @param $value
+     * @throws InvalidConfigException
+     */
+    public function setEmailFilter($value)
+    {
+        if (!($value instanceof \Closure)) {
+            throw new InvalidConfigException('The "filterEmail" property must be Closure.');
+        }
+        $this->_emailFilter = $value;
+    }
 
 }

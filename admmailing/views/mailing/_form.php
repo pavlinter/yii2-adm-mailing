@@ -1,6 +1,5 @@
 <?php
 
-use yii\helpers\Html;
 use pavlinter\buttons\InputButton;
 use pavlinter\adm\Adm;
 use yii\helpers\Url;
@@ -20,16 +19,7 @@ use yii\helpers\Url;
     <div class="row">
         <div class="col-xs-12 col-sm-6 col-md-6">
             <?= $form->field($model, 'title')->textInput(['maxlength' => 250]) ?>
-
-
         </div>
-        <div class="col-xs-12 col-sm-6 col-md-6">
-            <?= $form->field($model, 'email')->textInput(['maxlength' => 250]) ?>
-
-
-        </div>
-    </div>
-    <div class="row">
         <div class="col-xs-12 col-sm-6 col-md-6">
             <?= $form->field($model, 'type')->widget(\kartik\widgets\Select2::classname(), [
                 'data' => \pavlinter\admmailing\models\Mailing::typeList(),
@@ -39,8 +29,24 @@ use yii\helpers\Url;
                 ]
             ]); ?>
         </div>
+    </div>
+    <div class="row">
         <div class="col-xs-12 col-sm-6 col-md-6">
+            <?= $form->field($model, 'email')->textInput(['maxlength' => 320]) ?>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-6">
+
             <?= $form->field($model, 'name')->textInput(['maxlength' => 250]) ?>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12 col-sm-6 col-md-6">
+            <?= $form->field($model, 'reply_email')->textInput(['maxlength' => 320]) ?>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-6">
+
+            <?= $form->field($model, 'reply_name')->textInput(['maxlength' => 250]) ?>
         </div>
     </div>
 
@@ -99,7 +105,7 @@ use yii\helpers\Url;
         ]);?>
 
         <?=  InputButton::widget([
-            'label' => $model->isNewRecord ? Adm::t('mailing', 'Create and Send', ['dot' => false]) : Adm::t('mailing', 'Update and Send', ['dot' => false]),
+            'label' => $model->isNewRecord ? Yii::t('adm-mailing', 'Create and Send', ['dot' => false]) : Yii::t('adm-mailing', 'Update and Send', ['dot' => false]),
             'options' => ['class' => 'btn btn-primary'],
             'input' => 'adm-redirect',
             'name' => 'redirect',

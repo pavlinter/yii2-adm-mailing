@@ -26,6 +26,8 @@ use yii\helpers\ArrayHelper;
  * @property string $title
  * @property string $email
  * @property string $name
+ * @property string $reply_email
+ * @property string $reply_name
  * @property string $type
  * @property string $created_at
  * @property string $updated_at
@@ -77,9 +79,11 @@ class Mailing extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
+            [['email', 'name', 'reply_email', 'reply_name'], 'default', 'value' => null],
             [['title', 'type'], 'required'],
-            [['email'], 'email'],
-            [['title', 'email', 'name'], 'string', 'max' => 250],
+            [['email', 'reply_email'], 'email'],
+            [['title', 'name', 'reply_name'], 'string', 'max' => 250],
+            [['email', 'reply_email'], 'string', 'max' => 320],
             [['type'], 'string', 'max' => 50]
         ];
     }
@@ -99,16 +103,22 @@ class Mailing extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'id' => Yii::t('modelAdm/adm_mailing', 'ID'),
-            'title' => Yii::t('modelAdm/adm_mailing', 'Title'),
-            'email' => Yii::t('modelAdm/adm_mailing', 'Email'),
-            'name' => Yii::t('modelAdm/adm_mailing', 'Name'),
-            'type' => Yii::t('modelAdm/adm_mailing', 'Type'),
-            'created_at' => Yii::t('modelAdm/adm_mailing', 'Created At'),
-            'updated_at' => Yii::t('modelAdm/adm_mailing', 'Updated At'),
+            'id' => Yii::t('modelAdm/adm-mailing', 'ID'),
+            'title' => Yii::t('modelAdm/adm-mailing', 'Title'),
+            'email' => Yii::t('modelAdm/adm-mailing', 'Email'),
+            'name' => Yii::t('modelAdm/adm-mailing', 'Name'),
+            'reply_email' => Yii::t('modelAdm/adm-mailing', 'Reply To Email'),
+            'reply_name' => Yii::t('modelAdm/adm-mailing', 'Reply To Name'),
+            'type' => Yii::t('modelAdm/adm-mailing', 'Type'),
+            'created_at' => Yii::t('modelAdm/adm-mailing', 'Created At'),
+            'updated_at' => Yii::t('modelAdm/adm-mailing', 'Updated At'),
         ];
     }
 
+    /**
+     * @param bool|string $type
+     * @return array|null
+     */
     public static function typeList($type = false)
     {
         $module = Yii::$app->getModule('admmailing');

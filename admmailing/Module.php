@@ -91,6 +91,7 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
     public function init()
     {
         parent::init();
+        $this->registerTranslations();
         $this->initDefaultTypeList();
         $this->initDefaultTransport();
 
@@ -186,7 +187,7 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
               'query' => function(){
                   return \pavlinter\adm\models\User::find();
               },
-              'label' => Adm::t('mailing', 'Users'),
+              'label' => Yii::t('adm-mailing', 'Users', ['dot' => false]),
             ];
         } else {
             if ($this->typeList['users'] === false) {
@@ -211,5 +212,50 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
             }
             $this->typeList[$key] = Yii::createObject($options);
         }
+    }
+
+    /**
+     *
+     */
+    public function registerTranslations()
+    {
+        if (!isset(Yii::$app->i18n->translations['adm-mailing*'])) {
+            Yii::$app->i18n->translations['adm-mailing*'] = [
+                'class' => 'pavlinter\translation\DbMessageSource',
+                'forceTranslation' => true,
+                'autoInsert' => true,
+                'dotMode' => true,
+            ];
+        }
+        if (!isset(Yii::$app->i18n->translations['modelAdm*'])) {
+            Yii::$app->i18n->translations['modelAdm*'] = [
+                'class' => 'pavlinter\translation\DbMessageSource',
+                'forceTranslation' => true,
+                'autoInsert' => true,
+                'dotMode' => false,
+            ];
+        }
+    }
+
+    /**
+     * @param array $options
+     * @return string
+     */
+    public static function trasnalateLink($options = [])
+    {
+        $icon = ArrayHelper::remove($options, 'icon', 'glyphicon glyphicon-globe');
+
+        if(!isset($options['class'])) {
+            $options['class'] = 'pull-right';
+        }
+        if(!isset($options['target'])) {
+            $options['target'] = '_blank';
+        }
+        \yii\helpers\Html::addCssClass($options, $icon);
+        \yii\helpers\Html::addCssClass($options, 'mailing-trasnalate-link');
+
+        return \yii\helpers\Html::a(null, ['/adm/source-message/index', '?' => [
+            'SourceMessageSearch[category]' => 'adm-mailing'
+        ],], $options);
     }
 }
