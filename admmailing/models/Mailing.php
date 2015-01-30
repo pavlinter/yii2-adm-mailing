@@ -23,6 +23,7 @@ use yii\helpers\ArrayHelper;
  * @method \pavlinter\translation\TranslationBehavior hasTranslation
  *
  * @property integer $id
+ * @property integer|null $def_language_id
  * @property string $title
  * @property string $email
  * @property string $name
@@ -79,8 +80,9 @@ class Mailing extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['email', 'name', 'reply_email', 'reply_name'], 'default', 'value' => null],
+            [['email', 'name', 'reply_email', 'reply_name', 'def_language_id'], 'default', 'value' => null],
             [['title', 'type'], 'required'],
+            [['def_language_id'], 'integer'],
             [['email', 'reply_email'], 'email'],
             [['title', 'name', 'reply_name'], 'string', 'max' => 250],
             [['email', 'reply_email'], 'string', 'max' => 320],
@@ -104,9 +106,10 @@ class Mailing extends \yii\db\ActiveRecord
     {
         return [
             'id' => Yii::t('modelAdm/adm-mailing', 'ID'),
+            'def_language_id' => Yii::t('modelAdm/adm-mailing', 'Default Language'),
             'title' => Yii::t('modelAdm/adm-mailing', 'Title'),
-            'email' => Yii::t('modelAdm/adm-mailing', 'Email'),
-            'name' => Yii::t('modelAdm/adm-mailing', 'Name'),
+            'email' => Yii::t('modelAdm/adm-mailing', 'From Email'),
+            'name' => Yii::t('modelAdm/adm-mailing', 'From Name'),
             'reply_email' => Yii::t('modelAdm/adm-mailing', 'Reply To Email'),
             'reply_name' => Yii::t('modelAdm/adm-mailing', 'Reply To Name'),
             'type' => Yii::t('modelAdm/adm-mailing', 'Type'),

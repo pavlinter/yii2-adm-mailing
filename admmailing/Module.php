@@ -30,7 +30,7 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
     /**
      * @var string
      */
-    public $typeClass = 'pavlinter\admmailing\objects\Type';
+    public $typeClass = 'pavlinter\admmailing\components\Type';
     /**
      * @var array|\Closure
      * example:
@@ -96,7 +96,12 @@ class Module extends \yii\base\Module implements AdmBootstrapInterface
         $this->initDefaultTransport();
 
         if (empty($this->from)) {
-            $this->from = Yii::$app->params['adminEmailName'];
+            if (isset(Yii::$app->params['adminEmailName'])) {
+                $this->from = Yii::$app->params['adminEmailName'];
+            } else {
+                throw new InvalidConfigException('The "from" property must be set.');
+            }
+
         }
     }
 

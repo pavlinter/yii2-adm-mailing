@@ -7,8 +7,10 @@
 
 namespace pavlinter\admmailing\controllers;
 
+use pavlinter\admmailing\components\TypeEvent;
 use pavlinter\admmailing\models\Mailing;
 use pavlinter\admmailing\Module;
+use pavlinter\admmailing\components\Type;
 use Swift_SwiftException;
 use Yii;
 use pavlinter\adm\Adm;
@@ -151,7 +153,7 @@ class MailingController extends Controller
                 $json['error_text'] = Yii::t('adm-mailing', 'The type "'  . $model->type . '" is not exist!', ['dot' => false]);
                 return $json;
             }
-            /* @var $type \pavlinter\admmailing\objects\Type */
+            /* @var $type \pavlinter\admmailing\components\Type */
             $type = $module->typeList[$model->type];
 
             $from = $module->from;
@@ -170,8 +172,10 @@ class MailingController extends Controller
             $continue =  (int)Yii::$app->request->post('continue', 0);
             $changeTransport =  (int)Yii::$app->request->post('changeTransport', 0);
             $sumBadEmail = (int)Yii::$app->request->post('sumBadEmail', 0);
+            $testMail = (int)Yii::$app->request->post('testMail', 0);
 
             $username = null;
+            $testEmail = null;
             if (isset($module->transport[$changeTransport])) {
                 $transport = $module->transport[$changeTransport];
                 Yii::$app->mailer->setTransport($transport);
@@ -188,8 +192,9 @@ class MailingController extends Controller
                 $json['username'] = null;
             }
 
-
-
+            if ($model->def_language_id) {
+                Yii::$app->getI18n()->changeLanguage($model->def_language_id);
+            }
             /* @var $query \yii\db\Query */
             $query = call_user_func($type->getQuery());
 
@@ -228,16 +233,33 @@ class MailingController extends Controller
                             throw new Swift_SwiftException('Gmail! Continue please!');
                         }*/
 
-                        if ($i + $last > 10 && $i + $last < 12) {
-                            $row[$type->emailKey] = 'pavlinter@gmail.com';
+                        if ($testMail) {
+                            if (is_array($from)) {
+                                $testEmail =  array_keys($from)['0'];
+                            } else {
+                                $testEmail = $from;
+                            }
+                            $row[$type->emailKey] = $testEmail;
                         }
+                        
                         $mailer = Yii::$app->mailer->compose();
 
                         if (call_user_func($type->getEmailFilter(), $row[$type->emailKey], $row)) {
+
+                            $event = new TypeEvent([
+                                'row' => $row,
+                                'json' => $json,
+                                'model' => $model,
+                                'module' => $module,
+                            ]);
+                            $type->trigger(Type::EVENT_FILTER_DATA, $event);
+
                             $mailer->setTo($row[$type->emailKey]);
                             if ($model->reply_email) {
                                 $mailer->setReplyTo($model->reply_email, $model->reply_name);
                             }
+                            $model->setLanguage(Yii::$app->getI18n()->getId());
+
                             $replace = $type->getVarTemplate($row);
                             $subject = strtr($model->subject, $replace);
                             $text = strtr(nl2br($model->text), $replace);
@@ -245,7 +267,12 @@ class MailingController extends Controller
                             $mailer->setFrom($from)
                                 ->setSubject($subject)
                                 ->setHtmlBody($text);
-                            if (!$type->testMode) {
+
+                            if ($testMail) {
+                                $mailer->send();
+                                $braek = true;
+                                break;
+                            } elseif (!$type->testMode) {
                                 $mailer->send();
                             }
                             sleep($type->sendSleep);
@@ -254,6 +281,7 @@ class MailingController extends Controller
                         }
 
                     } catch(\Exception $e) {
+                        //exit($e->getMessage().'-');
                         $changeTransport++;
                         $i--;
                         $json['r'] = 'error';
@@ -271,31 +299,74 @@ class MailingController extends Controller
             $json['last'] = $i + $last;
             $json['changeTransport'] = $changeTransport;
             $json['badEmail'] = $badEmail;
-            if ($json['r']) {
-
-            }else if($i == $countIteration){
-                $json['r']    = 'process';
-            } else {
-                $json['r']    = 'end';
-                $json['text_success'] = Yii::t('adm-mailing', 'Success: {sum} / {end} <br/> Bad email: {countBadEmail}', ['dot' => false, 'sum' => $json['last'], 'end' => $countEmails, 'countBadEmail' => $sumBadEmail + $badEmail]);
+            if (!$json['r']) {
+                if ($testMail) {
+                    if ($countEmails) {
+                        $json['test_text'] = Yii::t('adm-mailing', 'Test mail sent to {email}', ['dot' => false, 'email' => $testEmail]);
+                    } else {
+                        $json['test_text'] = Yii::t('adm-mailing', 'The "{type}" type is empty', ['dot' => false, 'type' => $type->label]);
+                    }
+                    $json['r'] = 'testMail';
+                } else if ($i == $countIteration) {
+                    $json['r'] = 'process';
+                } else {
+                    $json['r'] = 'end';
+                    $json['text_success'] = Yii::t('adm-mailing', 'Success: {sum} / {end} <br/> Bad email: {countBadEmail}', ['dot' => false, 'sum' => $json['last'], 'end' => $countEmails, 'countBadEmail' => $sumBadEmail + $badEmail]);
+                }
             }
 
             $json['countEmails'] = $countEmails;
             $json['count'] = $i;
             $json['procent'] = (int)($json['last'] * 100 / $countEmails);
             $json['text'] = Yii::t('adm-mailing', 'Sended: {count} emails ({start}/{end})', ['count' => $i,'start' => $json['last'], 'end' => $countEmails, 'dot' => false]);
-            return $json;
+
+            $event = new TypeEvent([
+                'json' => $json,
+                'model' => $model,
+                'module' => $module,
+            ]);
+            $type->trigger(Type::EVENT_AFTER_SEND, $event);
+            return  $event->json;
         }
 
         if (!isset($module->typeList[$model->type])) {
             throw new NotFoundHttpException(Yii::t('adm-mailing', 'The type "'  . $model->type . '" is not exist!', ['dot' => false]));
         }
-        /* @var $type \pavlinter\admmailing\objects\Type */
+        /* @var $type \pavlinter\admmailing\components\Type */
         $type = $module->typeList[$model->type];
 
         return $this->render('send', [
             'model' => $model,
             'type' => $type,
         ]);
+    }
+
+    /**
+     * @param $type
+     * @return array
+     */
+    public function actionAjax($type)
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $module = Module::getInstance();
+        $json = ['r' => false];
+        if (isset($module->typeList[$type])) {
+
+            /* @var $typeComponent \pavlinter\admmailing\components\Type */
+            /* @var $query \yii\db\ActiveQuery */
+            $typeComponent = $module->typeList[$type];
+            $query = call_user_func($typeComponent->query);
+            $row = $query->one();
+            $attributes = $row->attributes();
+            $html = '';
+            foreach ($attributes as $attribute) {
+                $html .= Yii::t('adm-mailing', '{{variable}} - {label}<br />', ['variable' => $attribute, 'label' => $row->getAttributeLabel($attribute), 'dot' => false]);
+            }
+            $json['disableDefaultLang'] = $typeComponent->disableDefaultLang;
+            $json['r'] = true;
+            $json['html'] = $html;
+        }
+
+        return $json;
     }
 }

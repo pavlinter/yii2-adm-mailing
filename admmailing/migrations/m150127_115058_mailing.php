@@ -14,6 +14,7 @@ class m150127_115058_mailing extends Migration
 
         $this->createTable('{{%mailing}}', [
             'id' => Schema::TYPE_PK,
+            'def_language_id' => Schema::TYPE_INTEGER . " NULL",
             'title' => Schema::TYPE_STRING . "(250) NULL",
             'email' => Schema::TYPE_STRING . "(320) NULL",
             'name' => Schema::TYPE_STRING . "(250) NULL",

@@ -6,7 +6,7 @@ use yii\helpers\Url;
 
 /* @var $this yii\web\View */
 /* @var $model \pavlinter\admmailing\models\Mailing */
-/* @var $type \pavlinter\admmailing\objects\Type */
+/* @var $type \pavlinter\admmailing\components\Type */
 
 Yii::$app->i18n->disableDot();
 $this->title = Yii::t('adm-mailing', 'Send emails: ') . ' ' . $model->title;
@@ -19,11 +19,11 @@ Yii::$app->i18n->resetDot();
     <?= Module::trasnalateLink() ?>
     <h1><?= Html::encode($this->title) ?></h1>
 
-    <div class="">
+    <div>
         <div class="mailing-trans clearfix">
             <span class="mailing-transport label label-primary"></span>
         </div>
-        <div class="mailing-bb-cont">
+        <div>
             <div class="progress">
                 <div class="progress-bar progress-bar-success progress-bar-striped" style="width: 0%">
                     <span class="mailing-procent">0</span>%
@@ -33,6 +33,7 @@ Yii::$app->i18n->resetDot();
         <div class="mailing-res-process"></div>
         <button class="btn btn-primary mailing-btn-send"><?= Yii::t('adm-mailing', 'Send', ['dot' => false]) ?></button>
         <button class="btn btn-primary mailing-btn-continue" style="display: none;"><?= Yii::t('adm-mailing', 'Continue', ['dot' => false]) ?></button>
+        <button class="btn btn-primary mailing-btn-test pull-right"><?= Yii::t('adm-mailing', 'Test', ['dot' => false]) ?></button>
     </div>
 
 
@@ -40,22 +41,31 @@ Yii::$app->i18n->resetDot();
 
 
 <?php
+
+
+
+
 $this->registerJs('
+    var csrfParam = "' . Yii::$app->request->csrfParam . '";
+    var csrfToken = "' . Yii::$app->request->csrfToken . '";
     var type = ' . \yii\helpers\Json::encode($type) .';
     var lastNum = 0;
     var count = "";
     var changeTransport = 0;
     var badEmail = 0;
-    var sendEmail = function(num, contin){
+    var sendEmail = function(num, testMail, contin){
         num = parseInt(num);
-        var contin = contin || false;
+        var contin   = contin || false;
+        var testMail = testMail || false;
         var $resCont = $(".mailing-res-process");
-        var $bbCont = $(".mailing-bb-cont");
-        if(!num){
+        var $sendBtn = $(".mailing-btn-send");
+        var $continueBtn = $(".mailing-btn-continue");
+
+        if(num == 0){
+            badEmail = 0;
             $resCont.text("");
-            $(".mailing-btn-continue").hide();
+            $continueBtn.hide();
         }
-        $bbCont.show();
         $resCont.show()
         var $oneProcess = $("<div class=\"text-primary mailing-one-process\">'.Yii::t('adm-mailing', 'Loading.....', ['dot' => false]).'<div>");
         $resCont.append($oneProcess);
@@ -65,9 +75,14 @@ $this->registerJs('
             changeTransport : changeTransport,
             sumBadEmail : badEmail,
         };
+        data[csrfParam] = csrfToken;
 
         if(contin){
             data.continue = 1;
+        }
+        if(testMail){
+            data.testMail = 1;
+            $sendBtn.hide();
         }
 
         var xhr = $.ajax({
@@ -76,10 +91,16 @@ $this->registerJs('
             dataType: "json",
             data: data
         }).done(function(d){
-            $(".mailing-btn-send").hide();
-            changeTransport = d.changeTransport;
-            badEmail += d.badEmail;
-            lastNum = d.last;
+            if(testMail){
+                $oneProcess.html(d.test_text);
+                $sendBtn.show();
+                return true;
+            } else {
+                $sendBtn.hide();
+                changeTransport = d.changeTransport;
+                badEmail += d.badEmail;
+                lastNum = d.last;
+            }
 
             if(d.username == null){
                 $(".mailing-trans").hide()
@@ -95,10 +116,10 @@ $this->registerJs('
             if(d.r == "process"){
                 $oneProcess.html(d.text);
                 prevHide($oneProcess);
-                $("title").text(d.text);
+                $("title").text(removeHtml(d.text));
                 sendEmail(d.last);
             } else if(d.r == "end") {
-                $(".mailing-btn-send").show();
+                $sendBtn.show();
                 if(d.count){
                     $oneProcess.remove();
                 } else {
@@ -106,15 +127,15 @@ $this->registerJs('
                 }
 
 
-                $("title").text(d.text_success);
+                $("title").text(removeHtml(d.text_success));
                 $resCont.append("<div class=\"text-success mailing-success-process\">" + d.text_success + "<div>");
 
             } else if(d.r == "error") {
-                $("title").text(d.error_text);
+                $("title").text(removeHtml(d.error_text));
                 $oneProcess.html(d.text);
                 prevHide($oneProcess);
                 $oneProcess.after("<div class=\"text-danger mailing-error-process\">"+d.error_text+"<div>");
-                $(".mailing-btn-continue").show();
+                $continueBtn.show();
             }
 
 
@@ -124,9 +145,9 @@ $this->registerJs('
                 var textError = "'.Yii::t('adm-mailing', 'Server error: {start}/{end}', ['dot' => false]).'"
                 textError = textError.replace("{start}",lastNum).replace("{end}",count);
                 $oneProcess.after("<div class=\"text-danger mailing-error-process\">"+textError+"<div>");
-                $("title").text(textError);
+                $("title").text(removeHtml(textError));
                 $oneProcess.remove();
-                $(".mailing-btn-continue").show();
+                $continueBtn.show();
             if(xhr){
                 xhr.abort();
             }
@@ -135,7 +156,7 @@ $this->registerJs('
 
     $(".mailing-btn-continue").on("click", function(){
         $(this).hide();
-        sendEmail(lastNum, true);
+        sendEmail(lastNum, false, true);
         return false;
     });
 
@@ -154,5 +175,17 @@ $this->registerJs('
             $el.prev(".mailing-one-process").hide();
         }
     }
+
+    var removeHtml = function(html){
+        html = html.replace(/<br>/gi, "\n");
+        html = html.replace(/<br\s\/>/gi, "\n");
+        html = html.replace(/<br\/>/gi, "\n");
+        return html;
+    }
+
+    $(".mailing-btn-test").on("click", function(){
+        sendEmail(0, true);
+        return false;
+    });
 
 ');
