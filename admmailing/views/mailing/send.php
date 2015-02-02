@@ -33,7 +33,6 @@ Yii::$app->i18n->resetDot();
         <div class="mailing-res-process"></div>
         <button class="btn btn-primary mailing-btn-send"><?= Yii::t('adm-mailing', 'Send', ['dot' => false]) ?></button>
         <button class="btn btn-primary mailing-btn-continue" style="display: none;"><?= Yii::t('adm-mailing', 'Continue', ['dot' => false]) ?></button>
-        <button class="btn btn-primary mailing-btn-test pull-right"><?= Yii::t('adm-mailing', 'Test', ['dot' => false]) ?></button>
     </div>
 
 
@@ -53,10 +52,9 @@ $this->registerJs('
     var count = "";
     var changeTransport = 0;
     var badEmail = 0;
-    var sendEmail = function(num, testMail, contin){
+    var sendEmail = function(num, contin){
         num = parseInt(num);
         var contin   = contin || false;
-        var testMail = testMail || false;
         var $resCont = $(".mailing-res-process");
         var $sendBtn = $(".mailing-btn-send");
         var $continueBtn = $(".mailing-btn-continue");
@@ -80,10 +78,6 @@ $this->registerJs('
         if(contin){
             data.continue = 1;
         }
-        if(testMail){
-            data.testMail = 1;
-            $sendBtn.hide();
-        }
 
         var xhr = $.ajax({
             url: "'. Url::to('').'",
@@ -91,16 +85,12 @@ $this->registerJs('
             dataType: "json",
             data: data
         }).done(function(d){
-            if(testMail){
-                $oneProcess.html(d.test_text);
-                $sendBtn.show();
-                return true;
-            } else {
-                $sendBtn.hide();
-                changeTransport = d.changeTransport;
-                badEmail += d.badEmail;
-                lastNum = d.last;
-            }
+
+            $sendBtn.hide();
+            changeTransport = d.changeTransport;
+            badEmail += d.badEmail;
+            lastNum = d.last;
+
 
             if(d.username == null){
                 $(".mailing-trans").hide()
@@ -156,7 +146,7 @@ $this->registerJs('
 
     $(".mailing-btn-continue").on("click", function(){
         $(this).hide();
-        sendEmail(lastNum, false, true);
+        sendEmail(lastNum, true);
         return false;
     });
 
@@ -182,10 +172,4 @@ $this->registerJs('
         html = html.replace(/<br\/>/gi, "\n");
         return html;
     }
-
-    $(".mailing-btn-test").on("click", function(){
-        sendEmail(0, true);
-        return false;
-    });
-
 ');

@@ -126,6 +126,16 @@ use yii\helpers\Url;
             'value' => Url::to(['send', 'id' => '{id}']),
             'formSelector' => $form,
         ]);?>
+
+        <?=  InputButton::widget([
+            'label' => $model->isNewRecord ? Yii::t('adm-mailing', 'Create and Test', ['dot' => false]) : Yii::t('adm-mailing', 'Update and Test', ['dot' => false]),
+            'options' => ['class' => 'btn btn-primary pull-right'],
+            'input' => 'adm-redirect',
+            'name' => 'redirect',
+            'value' => Url::to(['test', 'id' => '{id}']),
+            'formSelector' => $form,
+        ]);?>
+
     </div>
 
     <?php Adm::end('ActiveForm'); ?>

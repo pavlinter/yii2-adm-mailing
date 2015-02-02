@@ -103,33 +103,53 @@ class MailingController extends Controller
     }
 
     /**
-     * Deletes an existing Mailing model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param integer $id
-     * @return mixed
+     * @param $id
+     * @return string
+     * @throws NotFoundHttpException
      */
-    public function actionDelete($id)
+    public function actionTest($id)
     {
-        $this->findModel($id)->delete();
-        Yii::$app->getSession()->setFlash('success', Adm::t('','Data successfully removed!'));
-        return $this->redirect(['index']);
-    }
+        /* @var $module \pavlinter\admmailing\Module */
+        /* @var $model \pavlinter\admmailing\models\Mailing */
+        $module = Module::getInstance();
+        $model  = $this->findModel($id);
 
-    /**
-     * Finds the Mailing model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param integer $id
-     * @return Mailing the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function findModel($id)
-    {
-        $model = Module::getInstance()->manager->createMailingQuery('find')->with(['translations'])->where(['id' => $id])->one();
-        if ($model !== null) {
-            return $model;
+        $emailFrom = $module->from;
+        if ($model->email) {
+            $emailTo = $model->email;
+            if ($model->name) {
+                $emailFrom = [$model->email => $model->name];
+            } else {
+                $emailFrom = $model->email;
+            }
         } else {
-            throw new NotFoundHttpException('The requested page does not exist.');
+            if (is_array($emailFrom)) {
+                $emailTo =  array_keys($emailFrom)['0'];
+            } else {
+                $emailTo = $module->from;
+            }
         }
+
+        $language_id = Yii::$app->getI18n()->getId();
+        if ($model->def_language_id) {
+            Yii::$app->getI18n()->changeLanguage($model->def_language_id);
+        }
+
+        $mailer = Yii::$app->mailer->compose();
+        $mailer->setTo($emailTo);
+        if ($model->reply_email) {
+            $mailer->setReplyTo($model->reply_email, $model->reply_name);
+        }
+        $model->setLanguage(Yii::$app->getI18n()->getId());
+
+        $mailer->setFrom($emailFrom)
+            ->setSubject($model->subject)
+            ->setHtmlBody(nl2br($model->text))
+            ->send();
+
+        Yii::$app->getI18n()->changeLanguage($language_id);
+        Yii::$app->getSession()->setFlash('success', Yii::t('adm-mailing', 'Test mail sent to {email}', ['email' => $emailTo]));
+        return Adm::redirect(['update', 'id' => $model->id]);
     }
 
     /**
@@ -172,7 +192,6 @@ class MailingController extends Controller
             $continue =  (int)Yii::$app->request->post('continue', 0);
             $changeTransport =  (int)Yii::$app->request->post('changeTransport', 0);
             $sumBadEmail = (int)Yii::$app->request->post('sumBadEmail', 0);
-            $testMail = (int)Yii::$app->request->post('testMail', 0);
 
             $username = null;
             $testEmail = null;
@@ -210,39 +229,15 @@ class MailingController extends Controller
             foreach ($queryRows->batch(50) as $rows) {
                 $braek = false;
                 foreach ($rows as $row) {
-                    if ($i + $last >= 19) {
-                        //break; //force stop;
-                    }
-
                     $i++;
-                    /* @var \yii\swiftmailer\Message $mailer */
-                    try {
-                        /*if ($i + $last == 20 && !$continue) {
-                            throw new Swift_SwiftException('Gmail! Continue please!');
-                        }
-                        if ($i + $last == 80 && !$continue) {
-                            throw new Swift_SwiftException('Gmail! Continue please!');
-                        }
-                        if ($i + $last == 125 && !$continue) {
-                            throw new Swift_SwiftException('Gmail! Continue please!');
-                        }
-                        if ($i + $last == 160 && !$continue) {
-                            throw new Swift_SwiftException('Gmail! Continue please!');
-                        }
-                        if ($i + $last == 200 && !$continue) {
-                            throw new Swift_SwiftException('Gmail! Continue please!');
-                        }*/
 
-                        if ($testMail) {
-                            if (is_array($from)) {
-                                $testEmail =  array_keys($from)['0'];
-                            } else {
-                                $testEmail = $from;
-                            }
-                            $row[$type->emailKey] = $testEmail;
-                        }
-                        
+                    try {
+                        /* @var \yii\swiftmailer\Message $mailer */
                         $mailer = Yii::$app->mailer->compose();
+
+                        if ($i + $last > 4 && $i + $last < 6) {
+                            $row[$type->emailKey] = 'pavlinter@gmail.com';
+                        }
 
                         if (call_user_func($type->getEmailFilter(), $row[$type->emailKey], $row)) {
 
@@ -268,11 +263,7 @@ class MailingController extends Controller
                                 ->setSubject($subject)
                                 ->setHtmlBody($text);
 
-                            if ($testMail) {
-                                $mailer->send();
-                                $braek = true;
-                                break;
-                            } elseif (!$type->testMode) {
+                            if (!$type->testMode) {
                                 $mailer->send();
                             }
                             sleep($type->sendSleep);
@@ -281,7 +272,6 @@ class MailingController extends Controller
                         }
 
                     } catch(\Exception $e) {
-                        //exit($e->getMessage().'-');
                         $changeTransport++;
                         $i--;
                         $json['r'] = 'error';
@@ -300,14 +290,7 @@ class MailingController extends Controller
             $json['changeTransport'] = $changeTransport;
             $json['badEmail'] = $badEmail;
             if (!$json['r']) {
-                if ($testMail) {
-                    if ($countEmails) {
-                        $json['test_text'] = Yii::t('adm-mailing', 'Test mail sent to {email}', ['dot' => false, 'email' => $testEmail]);
-                    } else {
-                        $json['test_text'] = Yii::t('adm-mailing', 'The "{type}" type is empty', ['dot' => false, 'type' => $type->label]);
-                    }
-                    $json['r'] = 'testMail';
-                } else if ($i == $countIteration) {
+                if ($i == $countIteration) {
                     $json['r'] = 'process';
                 } else {
                     $json['r'] = 'end';
@@ -318,7 +301,7 @@ class MailingController extends Controller
             $json['countEmails'] = $countEmails;
             $json['count'] = $i;
             $json['procent'] = (int)($json['last'] * 100 / $countEmails);
-            $json['text'] = Yii::t('adm-mailing', 'Sended: {count} emails ({start}/{end})', ['count' => $i,'start' => $json['last'], 'end' => $countEmails, 'dot' => false]);
+            $json['text'] = Yii::t('adm-mailing', 'Sent: {count} emails ({start}/{end})', ['count' => $i,'start' => $json['last'], 'end' => $countEmails, 'dot' => false]);
 
             $event = new TypeEvent([
                 'json' => $json,
@@ -368,5 +351,35 @@ class MailingController extends Controller
         }
 
         return $json;
+    }
+
+    /**
+     * Deletes an existing Mailing model.
+     * If deletion is successful, the browser will be redirected to the 'index' page.
+     * @param integer $id
+     * @return mixed
+     */
+    public function actionDelete($id)
+    {
+        $this->findModel($id)->delete();
+        Yii::$app->getSession()->setFlash('success', Adm::t('','Data successfully removed!'));
+        return Adm::redirect(['index']);
+    }
+
+    /**
+     * Finds the Mailing model based on its primary key value.
+     * If the model is not found, a 404 HTTP exception will be thrown.
+     * @param integer $id
+     * @return Mailing the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel($id)
+    {
+        $model = Module::getInstance()->manager->createMailingQuery('find')->with(['translations'])->where(['id' => $id])->one();
+        if ($model !== null) {
+            return $model;
+        } else {
+            throw new NotFoundHttpException('The requested page does not exist.');
+        }
     }
 }
