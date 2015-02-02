@@ -235,10 +235,6 @@ class MailingController extends Controller
                         /* @var \yii\swiftmailer\Message $mailer */
                         $mailer = Yii::$app->mailer->compose();
 
-                        if ($i + $last > 4 && $i + $last < 6) {
-                            $row[$type->emailKey] = 'pavlinter@gmail.com';
-                        }
-
                         if (call_user_func($type->getEmailFilter(), $row[$type->emailKey], $row)) {
 
                             $event = new TypeEvent([
