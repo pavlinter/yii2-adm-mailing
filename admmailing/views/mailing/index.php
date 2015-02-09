@@ -52,9 +52,9 @@ Yii::$app->i18n->resetDot();
                 'hAlign' => 'center',
                 'vAlign' => 'middle',
                 'filterType' => GridView::FILTER_SELECT2,
-                'filter'=> Mailing::typeList(),
+                'filter'=> $searchModel::typeList(),
                 'value' => function ($model) {
-                    return Mailing::typeList($model->type);
+                    return $model::typeList($model->type);
                 },
                 'filterWidgetOptions' => [
                     'pluginOptions' => ['allowClear' => true],

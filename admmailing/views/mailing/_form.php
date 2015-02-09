@@ -21,7 +21,7 @@ use yii\helpers\Url;
         </div>
         <div class="col-xs-12 col-sm-4 col-md-4">
             <?= $form->field($model, 'type')->widget(\kartik\widgets\Select2::classname(), [
-                'data' => \pavlinter\admmailing\models\Mailing::typeList(),
+                'data' => $model::typeList(),
                 'options' => ['placeholder' => Adm::t('','Select ...', ['dot' => false])],
                 'pluginOptions' => [
                     'allowClear' => true,
