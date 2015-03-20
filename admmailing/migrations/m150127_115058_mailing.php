@@ -34,7 +34,7 @@ class m150127_115058_mailing extends Migration
             'text' => Schema::TYPE_TEXT,
         ], $tableOptions);
 
-        $this->createIndex('page_id', '{{%mailing_lang}}', 'mailing_id');
+        $this->createIndex('mailing_id', '{{%mailing_lang}}', 'mailing_id');
         $this->createIndex('language_id', '{{%mailing_lang}}', 'language_id');
 
         $this->addForeignKey('mailing_lang_ibfk_1', '{{%mailing_lang}}', 'mailing_id', '{{%mailing}}', 'id', 'CASCADE', 'CASCADE');
@@ -44,7 +44,7 @@ class m150127_115058_mailing extends Migration
 
     public function down()
     {
-        $this->dropTable('{{%page_lang}}');
-        $this->dropTable('{{%page}}');
+        $this->dropTable('{{%mailing_lang}}');
+        $this->dropTable('{{%mailing}}');
     }
 }
